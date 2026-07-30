@@ -9,3 +9,4 @@ data/runs/
 .env.local
 apps/web/dist/
 apps/api/dist/
+*.tsbuildinfo
