@@ -4,7 +4,7 @@ Aplicação local para disparar scans do [`@openai/codex-security`](https://gith
 
 ## Stack
 
-- **Web:** Vite + React + TypeScript (`apps/web`)
+- **Web:** Vite + React + TypeScript + Tailwind CSS + daisyUI + Hugeicons + Framer Motion (`apps/web`)
 - **API:** Node + Hono (`apps/api`)
 - **Shared types:** `packages/shared`
 - **Dados:** lê `~/.codex/state/plugins/codex-security` e espelha métricas em `data/benchmark.db`
@@ -51,10 +51,11 @@ Na subida, a API indexa scans já existentes no state do Codex Security (ex.: Co
 | `CODEX_SECURITY_STATE_DIR` | `~/.codex/state/plugins/codex-security` | State do plugin |
 | `CODEX_SECURITY_BIN` | `npx` | Binário do CLI |
 | `CSB_HOST` / `CSB_PORT` | `127.0.0.1` / `8787` | Bind da API |
+| `CSB_MAX_CONCURRENT_SCANS` | `8` | Máximo de scans CLI em paralelo |
 
 ## Aviso de custo
 
-Scans podem ser caros. O Contion (gpt-5.6-sol / high) chegou a ~US$ 98 de estimativa. Use sempre `--max-cost` / o campo Max cost na UI. Os valores são **estimativas** de tokens API e podem diferir do consumo do plano ChatGPT.
+Scans podem ser caros. O Contion (gpt-5.6-sol / high) chegou a ~US$ 98 de estimativa. O Max cost na UI (mín. US$ 100) mapeia para `--max-cost` e **para** o scan se a estimativa passar; há opção “sem limite”. O escopo é o default do CLI (paths manuais opcionais). Os valores de custo são **estimativas** de tokens API e podem diferir do plano ChatGPT.
 
 ## Scripts
 

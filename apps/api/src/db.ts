@@ -218,6 +218,10 @@ export function getRun(id: string): ScanRun | null {
   return row ? rowToScanRun(row) : null;
 }
 
+export function deleteRun(id: string): void {
+  getDb().prepare(`DELETE FROM runs WHERE id = ?`).run(id);
+}
+
 export function parseCostJson(raw: string | null | undefined): ScanCost | null {
   if (!raw) return null;
   try {

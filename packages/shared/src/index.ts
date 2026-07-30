@@ -38,6 +38,28 @@ export interface ScanCost {
   model?: string;
 }
 
+export type ScanPhase =
+  | "preflight"
+  | "threat_model"
+  | "discovery"
+  | "validation"
+  | "attack_path"
+  | "reporting";
+
+/** Best-effort progress derived from Codex Security workbench phases. */
+export interface ScanProgress {
+  /** 0–100 estimate; never claims 100 while still running. */
+  percent: number;
+  phase: ScanPhase | string | null;
+  phaseLabel: string;
+  detail: string | null;
+  unit: string | null;
+  itemsCompleted: number;
+  itemsTotal: number;
+  deepPhase?: string | null;
+  reportableFindings?: number;
+}
+
 export interface ScanRun {
   id: string;
   displayName: string;
@@ -55,6 +77,7 @@ export interface ScanRun {
   severity: SeverityCounts;
   source: "workbench" | "benchmark" | "filesystem";
   pid: number | null;
+  progress?: ScanProgress | null;
 }
 
 export interface FindingSummary {
@@ -67,6 +90,8 @@ export interface FindingSummary {
   summary: string | null;
   primaryPath: string | null;
   fingerprints: string[];
+  category: string | null;
+  cwe: string[];
 }
 
 export interface FindingDetail extends FindingSummary {
@@ -77,12 +102,23 @@ export interface FindingDetail extends FindingSummary {
   taxonomy: unknown;
   rootCause: unknown;
   validation: unknown;
+  preventiveControls: unknown;
+  remediationTests: unknown;
+  severityRationale: string | null;
+  confidenceRationale: string | null;
 }
 
 export interface MetricsSummary {
   totalScans: number;
   completedScans: number;
+  runningScans: number;
   totalEstimatedUsd: number;
+  avgUsdPerScan: number;
+  avgDurationMs: number | null;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  highPerDollar: number | null;
+  findingsPerDollar: number | null;
   severity: SeverityCounts;
   byModelEffort: Array<{
     model: string;
@@ -94,6 +130,21 @@ export interface MetricsSummary {
     findingsTotal: number;
     highPerDollar: number | null;
     totalPerDollar: number | null;
+  }>;
+  costTrend: Array<{
+    scanId: string;
+    displayName: string;
+    startedAt: string | null;
+    estimatedUsd: number;
+    findingsHigh: number;
+    findingsTotal: number;
+    model: string | null;
+    effort: string | null;
+  }>;
+  topCategories: Array<{
+    category: string;
+    count: number;
+    high: number;
   }>;
   recent: ScanRun[];
 }
@@ -161,15 +212,19 @@ export interface HealthResponse {
   api: string;
   codexStateDir: string;
   codexInfo: CodexInfo | null;
+  /** First active scan id (compat). Prefer activeScanIds. */
   activeScanId: string | null;
+  activeScanIds: string[];
+  maxConcurrentScans: number;
 }
 
 export interface ScanEvent {
-  type: "log" | "status" | "cost" | "done" | "error";
+  type: "log" | "status" | "cost" | "done" | "error" | "progress";
   at: string;
   message?: string;
   status?: ScanStatus;
   cost?: Partial<ScanCost>;
+  progress?: ScanProgress;
   scan?: ScanRun;
 }
 

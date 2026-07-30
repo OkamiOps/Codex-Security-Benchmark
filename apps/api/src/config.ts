@@ -26,6 +26,12 @@ export const SCANS_ROOT = path.join(CODEX_SECURITY_STATE_DIR, "scans");
 export const API_HOST = process.env.CSB_HOST || "127.0.0.1";
 export const API_PORT = Number(process.env.CSB_PORT || 8787);
 
+/** Soft cap so a click-storm doesn't spawn unbounded Codex jobs. */
+export const MAX_CONCURRENT_SCANS = Math.max(
+  1,
+  Number(process.env.CSB_MAX_CONCURRENT_SCANS || 8) || 8,
+);
+
 export const CODEX_SECURITY_BIN =
   process.env.CODEX_SECURITY_BIN?.trim() || "npx";
 

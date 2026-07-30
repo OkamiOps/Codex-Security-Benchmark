@@ -10,3 +10,5 @@ data/runs/
 apps/web/dist/
 apps/api/dist/
 *.tsbuildinfo
+tmp/
+.pnpm-store/

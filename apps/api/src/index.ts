@@ -8,14 +8,31 @@ import {
   RUNS_DIR,
 } from "./config.js";
 import { getDb } from "./db.js";
-import { importExternalScans } from "./ingest.js";
+import { importExternalScans, reconcileRunningScans } from "./ingest.js";
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(RUNS_DIR, { recursive: true });
 getDb();
 
-const { imported } = importExternalScans();
-console.log(`[csb-api] Indexed ${imported} scan(s) from Codex Security state`);
+const { imported, pruned } = importExternalScans();
+console.log(
+  `[csb-api] Indexed ${imported} scan(s) from Codex Security state` +
+    (pruned ? ` (pruned ${pruned} duplicate(s))` : ""),
+);
+
+const reconciled = reconcileRunningScans();
+if (reconciled > 0) {
+  console.log(`[csb-api] Reconciled ${reconciled} running scan(s) from workbench`);
+}
+
+// Keep orphaned CLI jobs (surviving an API restart) in sync with workbench.
+setInterval(() => {
+  try {
+    reconcileRunningScans();
+  } catch {
+    // ignore transient sqlite locks
+  }
+}, 15_000).unref();
 
 serve(
   {

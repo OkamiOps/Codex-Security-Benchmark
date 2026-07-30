@@ -17,9 +17,12 @@ import {
   toFindingSummaries,
 } from "./ingest.js";
 import { buildMetricsSummary } from "./metrics.js";
+import { withProgress, withProgressMany } from "./progress.js";
+import { MAX_CONCURRENT_SCANS } from "./config.js";
 import {
   cancelScan,
-  getActiveScanId,
+  getActiveScanIds,
+  isScanActive,
   startScan,
   subscribe,
 } from "./runner.js";
@@ -37,12 +40,15 @@ app.use(
 
 app.get("/health", async (c) => {
   const codexInfo = await getCodexInfo();
+  const activeScanIds = getActiveScanIds();
   const body: HealthResponse = {
     ok: true,
     api: "codex-security-benchmark",
     codexStateDir: CODEX_SECURITY_STATE_DIR,
     codexInfo,
-    activeScanId: getActiveScanId(),
+    activeScanId: activeScanIds[0] ?? null,
+    activeScanIds,
+    maxConcurrentScans: MAX_CONCURRENT_SCANS,
   };
   return c.json(body);
 });
@@ -54,13 +60,13 @@ app.post("/ingest", (c) => {
 
 app.get("/metrics/summary", (c) => c.json(buildMetricsSummary()));
 
-app.get("/scans", (c) => c.json({ scans: listRuns() }));
+app.get("/scans", (c) => c.json({ scans: withProgressMany(listRuns()) }));
 
 app.get("/scans/:id", (c) => {
   const run = getRun(c.req.param("id"));
   if (!run) return c.json({ error: "Scan não encontrado" }, 404);
   const findings = toFindingSummaries(readFindingsFile(run.scanDir));
-  return c.json({ scan: run, findings });
+  return c.json({ scan: withProgress(run), findings });
 });
 
 app.get("/scans/:id/findings", (c) => {
@@ -137,7 +143,7 @@ app.get("/scans/:id/events", (c) => {
     // Keep connection open while scan is active
     while (!closed) {
       await stream.sleep(1000);
-      if (getActiveScanId() !== id && getRun(id)?.status !== "running") {
+      if (!isScanActive(id) && getRun(id)?.status !== "running") {
         // If not active anymore, end after a short grace
         await stream.sleep(500);
         closed = true;
